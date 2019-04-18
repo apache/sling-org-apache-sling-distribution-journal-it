@@ -29,7 +29,13 @@
         <version>34</version>
         <relativePath />
     </parent>
+
+    <!-- ======================================================================= -->
+    <!-- P R O J E C T                                                           -->
+    <!-- ======================================================================= -->
     <artifactId>org.apache.sling.distribution.journal.it</artifactId>
+    <version>0.0.1-INCUBATOR-SNAPSHOT</version>
+
     <name>Apache Sling Distribution Journal - IT project</name>
     <description>
         Integration Tests project for the Apache Sling Distribution over journal
@@ -45,6 +51,9 @@
         <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-distribution-journal-it.git</url>
     </scm>
 
+    <!-- ======================================================================= -->
+    <!-- B U I L D                                                               -->
+    <!-- ======================================================================= -->
     <build>
         <plugins>
             <plugin>
@@ -70,7 +79,10 @@
             </plugin>
         </plugins>
     </build>
-  
+
+    <!-- ======================================================================= -->
+    <!-- D E P E N D E N C I E S                                                 -->
+    <!-- ======================================================================= -->
     <dependencies>
         <dependency>
             <groupId>org.apache.sling</groupId>
