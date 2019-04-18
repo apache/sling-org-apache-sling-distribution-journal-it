@@ -22,6 +22,8 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.io.IOUtils.closeQuietly;
 import static org.apache.sling.distribution.journal.HandlerAdapter.create;
+import static org.apache.sling.distribution.journal.it.DistributionTestSupport.TOPIC_DISCOVERY;
+import static org.apache.sling.distribution.journal.it.DistributionTestSupport.TOPIC_PACKAGE;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -57,7 +59,6 @@ import org.apache.jackrabbit.oak.segment.file.InvalidFileStoreVersionException;
 import org.apache.sling.distribution.journal.MessageInfo;
 import org.apache.sling.distribution.journal.MessagingProvider;
 import org.apache.sling.distribution.journal.Reset;
-import org.apache.sling.distribution.journal.impl.shared.Topics;
 import org.apache.sling.distribution.journal.it.ClusterIdCleaner;
 import org.apache.sling.distribution.journal.it.DistributionTestSupport;
 import org.apache.sling.distribution.journal.it.FileUtil;
@@ -113,9 +114,8 @@ public class ScaleUpTest {
         kafka = new KafkaLocal();
         DistributionTestSupport.createTopics();
         this.provider = DistributionTestSupport.createProvider();
-        Topics topics = new Topics();
-        packagePoller = this.provider.createPoller(topics.getPackageTopic(), Reset.earliest, create(PackageMessage.class, this::handle));
-        discoveryPoller = this.provider.createPoller(topics.getDiscoveryTopic(), Reset.earliest, create(DiscoveryMessage.class, this::handleDiscovery));
+        packagePoller = this.provider.createPoller(TOPIC_PACKAGE, Reset.earliest, create(PackageMessage.class, this::handle));
+        discoveryPoller = this.provider.createPoller(TOPIC_DISCOVERY, Reset.earliest, create(DiscoveryMessage.class, this::handleDiscovery));
     }
 
     @Ignore
