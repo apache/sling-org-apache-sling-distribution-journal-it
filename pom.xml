@@ -165,13 +165,13 @@
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.distribution.journal</artifactId>
-            <version>0.1.1-SNAPSHOT</version>
+            <version>0.1.3-SNAPSHOT</version>
         </dependency>
         
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.distribution.journal.kafka</artifactId>
-            <version>0.1.1-SNAPSHOT</version>
+            <version>0.1.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
