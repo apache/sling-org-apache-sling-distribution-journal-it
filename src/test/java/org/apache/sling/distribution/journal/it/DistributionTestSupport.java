@@ -112,7 +112,8 @@ public class DistributionTestSupport extends TestSupport {
                 slingQuickstart(baseDirectory),
                 mavenBundle().groupId("org.apache.felix").artifactId("org.apache.felix.webconsole.plugins.ds").version(SlingOptions.versionResolver),
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.commons.metrics").version(SlingOptions.versionResolver),
-
+                mvn("org.apache.felix", "org.apache.felix.rootcause"),
+                mvn("org.apache.felix", "org.apache.felix.systemready"),
                 mvn("com.google.protobuf", "protobuf-java"),
                 kafka(),
 
