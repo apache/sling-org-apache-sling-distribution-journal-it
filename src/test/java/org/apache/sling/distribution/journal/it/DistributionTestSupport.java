@@ -25,6 +25,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.apache.kafka.clients.admin.AdminClient.create;
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
+import static org.apache.sling.testing.paxexam.SlingOptions.paxTinybundles;
 import static org.apache.sling.testing.paxexam.SlingOptions.slingDistribution;
 import static org.apache.sling.testing.paxexam.SlingOptions.slingQuickstartOak;
 import static org.ops4j.pax.exam.Constants.START_LEVEL_SYSTEM_BUNDLES;
@@ -32,7 +33,9 @@ import static org.ops4j.pax.exam.CoreOptions.bootDelegationPackage;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.composite;
 import static org.ops4j.pax.exam.CoreOptions.frameworkStartLevel;
+import static org.ops4j.pax.exam.CoreOptions.keepCaches;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
+import static org.ops4j.pax.exam.CoreOptions.repository;
 import static org.ops4j.pax.exam.CoreOptions.systemProperty;
 import static org.ops4j.pax.exam.CoreOptions.url;
 import static org.ops4j.pax.exam.CoreOptions.vmOption;
@@ -57,6 +60,7 @@ import org.apache.sling.testing.paxexam.SlingOptions;
 import org.apache.sling.testing.paxexam.TestSupport;
 import org.ops4j.pax.exam.ConfigurationManager;
 import org.ops4j.pax.exam.Constants;
+import org.ops4j.pax.exam.CoreOptions;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.options.CompositeOption;
 import org.ops4j.pax.exam.options.DefaultCompositeOption;
@@ -104,7 +108,14 @@ public class DistributionTestSupport extends TestSupport {
         SlingOptions.versionResolver.setVersion("org.slf4j", "log4j-over-slf4j", "1.7.6");
 
         Option baseOptions = composite(
-                super.baseConfiguration(),
+                failOnUnresolvedBundles(),
+                keepCaches(),
+                localMavenRepo(),
+                //repository("https://repository.apache.org/snapshots/").id("apache-snapshots").allowSnapshots(),
+                repository("https://repo1.maven.org/maven2").id("central"),
+                CoreOptions.workingDirectory(workingDirectory()),
+                mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.testing.paxexam").versionAsInProject(),
+                paxTinybundles(),
                 SlingOptions.logback(),
                 mavenBundle().groupId("org.slf4j").artifactId("log4j-over-slf4j").version(SlingOptions.versionResolver),
                 
