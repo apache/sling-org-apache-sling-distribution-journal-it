@@ -20,7 +20,6 @@ package org.apache.sling.distribution.journal.it;
 
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 
@@ -59,6 +58,7 @@ import org.apache.sling.distribution.journal.MessagingProvider;
 import org.apache.sling.distribution.journal.it.kafka.KafkaLocal;
 import org.awaitility.Duration;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.ops4j.pax.exam.Configuration;
@@ -168,12 +168,8 @@ public class DistributionTestBase extends DistributionTestSupport {
         return queueNames;
     }
 
-    private boolean allQueuesEmpty() {
-        return queueNames().stream().allMatch(this::queueEmpty);
-    }
-
-    private boolean queueEmpty(String queueName) {
-        return agent.getQueue(queueName).getStatus().getItemsCount() == 0;
+    protected int getQueueItems(String queueName) {
+        return agent.getQueue(queueName).getStatus().getItemsCount();
     }
 
     @SuppressWarnings({ "deprecation" })
@@ -219,28 +215,36 @@ public class DistributionTestBase extends DistributionTestSupport {
             .until(() -> tryGetPath(httpPort, path), equalTo(200));
     }
 
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public Iterable<String> waitSubQueues(String... queues) {
-        Matcher[] matchers = Stream.of(queues).map(q -> containsString(q)).toArray(Matcher[]::new);
-
-        await().atMost(Duration.FIVE_MINUTES)
-                .until(this::queueNames, containsInAnyOrder(matchers));
-
-        Iterable<String> queueNames = agent.getQueueNames();
+        Matcher<String>[] matchers = containsNames(queues);
+        Iterable<String> queueNames = await().atMost(Duration.ONE_MINUTE)
+            .pollInterval(Duration.FIVE_SECONDS)
+            .until(this::queueNames, containsInAnyOrder(matchers));
         LOG.info("Subscriber Queues: " + String.join(", ", queueNames));
-
         return queueNames;
     }
 
+    @SuppressWarnings("unchecked")
+    private Matcher<String>[] containsNames(String... queues) {
+        return Stream.of(queues)
+                .map(name -> Matchers.containsString(name))
+                .toArray(Matcher[]::new);
+    }
+
     protected void waitEmptySubQueues() {
-        await().atMost(60, TimeUnit.SECONDS)
-                .until(this::allQueuesEmpty, equalTo(true));
+        List<String> names = queueNames();
+        for (String name : names) {
+            await("Queue " + name + "empty")
+                .atMost(60, TimeUnit.SECONDS)
+                .until(() -> getQueueItems(name), equalTo(0));
+        }
     }
 
 
     static protected void waitQueueItems(int httpPort, String agentName, int count) {
-        await().atMost(Duration.FIVE_MINUTES)
+        await("Waiting for number of items in queue.")
+                .atMost(Duration.ONE_MINUTE)
+                .pollInterval(Duration.FIVE_SECONDS)
                 .until(() -> tryGetQueueItems(httpPort, agentName), equalTo(count));
         LOG.info("Items count {} for agent {}", count, agentName + "-" + httpPort);
 

@@ -36,12 +36,12 @@ import java.io.IOException;
 @ExamReactorStrategy(PerClass.class)
 public class StagedDistributionFailureTest extends DistributionTestBase {
 
-    private static final String SUB1_AGENT = "subscriber-regular";
-    private static final String SUB2_AGENT = "subscriber-golden";
+    private static final String SUB1_AGENT = "subscriber";
+    private static final String SUB2_AGENT = "subscriber";
 
 
-    private static TestContainer publish;
-    private static TestContainer golden_publish;
+    private static volatile TestContainer publish;
+    private static volatile TestContainer golden_publish;
 
 
     private static final String TEST_PATH = "/content/mytest";
@@ -51,14 +51,16 @@ public class StagedDistributionFailureTest extends DistributionTestBase {
     public static void beforeOsgi() throws Exception {
         beforeOsgiBase();
         publish = startPublishInstance(8182,  SUB1_AGENT, false,  SUB2_AGENT);
+        new Thread(StagedDistributionFailureTest::delayedStartGoldenSubscriber).start();
+    }
 
-        new Thread(() -> {
-            // Wait for  at least one item in publish queue before starting golden publish
-            waitQueueItems(8182, SUB1_AGENT, 1);
-
-            LOG.info("Starting golden publish");
-            golden_publish = startPublishInstance(8183, SUB2_AGENT, true, null);
-        }).start();
+    /**
+     * Wait for  at least one item in publish queue before starting golden publish
+     */
+    private static void delayedStartGoldenSubscriber() {
+        waitQueueItems(8182, SUB1_AGENT, 1);
+        LOG.info("Starting golden publish");
+        golden_publish = startPublishInstance(8183, SUB2_AGENT, true, null);
     }
 
     @AfterOsgi
@@ -80,6 +82,12 @@ public class StagedDistributionFailureTest extends DistributionTestBase {
         waitSubQueues(SUB1_AGENT);
     }
 
+    /**
+     * Start just a regular subscriber and do a distribution. 
+     * We expect that this subscriber does not process the package as it wait on the golden subscriber.
+     * After the message is present in the queue we start the golden subscriber.
+     * Now first golden then regular subscriber should be able to process the distribution package.
+     */
     @Test
     public void testDistribute() {
 

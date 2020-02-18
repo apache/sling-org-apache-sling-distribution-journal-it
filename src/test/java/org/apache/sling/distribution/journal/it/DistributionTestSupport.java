@@ -306,7 +306,7 @@ public class DistributionTestSupport extends TestSupport {
     protected static Option publishOsgiConfigs(String agentName, boolean editable, String stage) {
 
 
-        Option subConfig = composite(
+        return composite(
                 factoryConfiguration("org.apache.sling.distribution.resources.impl.DistributionServiceResourceProviderFactory")
                         .put("kind", "agent")
                         .put("provider.roots", "/libs/sling/distribution/services/agents")
@@ -320,13 +320,6 @@ public class DistributionTestSupport extends TestSupport {
                         .put("editable", editable)
                         .put("announceDelay", "500")
                         .asOption());
-
-        Option condConfig =  newConfiguration("org.apache.sling.distribution.journal.impl.subscriber.StagingPrecondition")
-                .put("subAgentName", stage)
-                .asOption();
-
-        return stage != null ? composite(subConfig, condConfig) : subConfig;
-
     }
 
 
