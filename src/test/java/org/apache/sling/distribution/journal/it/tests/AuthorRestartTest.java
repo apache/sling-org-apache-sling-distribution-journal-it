@@ -117,7 +117,7 @@ public class AuthorRestartTest extends DistributionTestSupport {
             messageSem.tryAcquire(NUM_MESSAGES, 100, TimeUnit.SECONDS);
         }
         await().until(() -> toSet(agent.getQueueNames()), equalTo(Collections.emptySet()));
-        DiscoveryMessage disc = createDiscoveryMessage(0);
+        DiscoveryMessage disc = createDiscoveryMessage(-1);
         clientProvider.createSender().send(TOPIC_DISCOVERY, disc);
         await().until(() -> toSet(agent.getQueueNames()), equalTo(Collections.singleton(QUEUE_NAME)));
         

@@ -124,7 +124,7 @@ public class AuthorDistributeTest extends DistributionTestSupport {
             assertPackageReceived();
         }
         
-        simulateDiscoveryMessage();
+        simulateDiscoveryMessage(-1);
         await().until(() -> toSet(agent.getQueueNames()), equalTo(Collections.singleton(QUEUE_NAME)));
         assertThat(agent.getQueue(QUEUE_NAME).getStatus().getItemsCount(), equalTo(1));
     }
@@ -153,10 +153,9 @@ public class AuthorDistributeTest extends DistributionTestSupport {
         assertEquals("/", path);
     }
 
-    private void simulateDiscoveryMessage() throws InterruptedException {
-        assertEquals(Collections.emptySet(), toSet(agent.getQueueNames()));
+    private void simulateDiscoveryMessage(long offset) {
         MessageSender<DiscoveryMessage> discSender = clientProvider.createSender();
-        DiscoveryMessage disc = createDiscoveryMessage(0);
+        DiscoveryMessage disc = createDiscoveryMessage(offset);
         discSender.send(TOPIC_DISCOVERY, disc);
     }
 
