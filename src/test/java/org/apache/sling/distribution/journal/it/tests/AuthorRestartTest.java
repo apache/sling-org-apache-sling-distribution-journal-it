@@ -46,11 +46,11 @@ import org.apache.sling.distribution.journal.MessagingProvider;
 import org.apache.sling.distribution.journal.Reset;
 import org.apache.sling.distribution.journal.it.DistributionTestSupport;
 import org.apache.sling.distribution.journal.it.kafka.PaxExamWithKafka;
-import org.apache.sling.distribution.journal.messages.Messages.DiscoveryMessage;
-import org.apache.sling.distribution.journal.messages.Messages.PackageMessage;
-import org.apache.sling.distribution.journal.messages.Messages.PackageMessage.ReqType;
-import org.apache.sling.distribution.journal.messages.Messages.SubscriberConfiguration;
-import org.apache.sling.distribution.journal.messages.Messages.SubscriberState;
+import org.apache.sling.distribution.journal.messages.DiscoveryMessage;
+import org.apache.sling.distribution.journal.messages.PackageMessage;
+import org.apache.sling.distribution.journal.messages.PackageMessage.ReqType;
+import org.apache.sling.distribution.journal.messages.SubscriberConfig;
+import org.apache.sling.distribution.journal.messages.SubscriberState;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
@@ -61,7 +61,6 @@ import org.ops4j.pax.exam.util.Filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.protobuf.ByteString;
 
 /**
  * Starts an author instance, triggers a content distribution and checks that the package arrives
@@ -111,14 +110,14 @@ public class AuthorRestartTest extends DistributionTestSupport {
                 log.info("Sending message {}", c);
             }
             PackageMessage packageMessage = createPackageMessage(c);
-            clientProvider.createSender().send(TOPIC_PACKAGE, packageMessage);
+            clientProvider.createSender(TOPIC_PACKAGE).send(packageMessage);
         }
         try (Closeable packagePoller = createPoller()) {
             messageSem.tryAcquire(NUM_MESSAGES, 100, TimeUnit.SECONDS);
         }
         await().until(() -> toSet(agent.getQueueNames()), equalTo(Collections.emptySet()));
         DiscoveryMessage disc = createDiscoveryMessage(-1);
-        clientProvider.createSender().send(TOPIC_DISCOVERY, disc);
+        clientProvider.createSender(TOPIC_DISCOVERY).send(disc);
         await().until(() -> toSet(agent.getQueueNames()), equalTo(Collections.singleton(QUEUE_NAME)));
         
         log.info("Checking Items in queue");
@@ -136,19 +135,19 @@ public class AuthorRestartTest extends DistributionTestSupport {
     }
 
     private DiscoveryMessage createDiscoveryMessage(long offset) {
-        SubscriberState subState = SubscriberState.newBuilder()
-                .setOffset(offset)
-                .setPubAgentName(PUB1_AGENT)
+        SubscriberState subState = SubscriberState.builder()
+                .offset(offset)
+                .pubAgentName(PUB1_AGENT)
                 .build();
-        return DiscoveryMessage.newBuilder()
-                .setSubSlingId(SUB1_SLING_ID)
-                .setSubAgentName(SUB1_AGENT)
-                .setSubscriberConfiguration(SubscriberConfiguration
-                        .newBuilder()
-                        .setEditable(false)
-                        .setMaxRetries(-1)
+        return DiscoveryMessage.builder()
+                .subSlingId(SUB1_SLING_ID)
+                .subAgentName(SUB1_AGENT)
+                .subscriberConfiguration(SubscriberConfig
+                        .builder()
+                        .editable(false)
+                        .maxRetries(-1)
                         .build())
-                .addSubscriberState(subState)
+                .subscriberStates(Collections.singletonList(subState))
                 .build();
     }
 
@@ -158,14 +157,14 @@ public class AuthorRestartTest extends DistributionTestSupport {
     }
     
     private PackageMessage createPackageMessage(int num) throws IOException {
-        return PackageMessage.newBuilder()
-                .setPkgId("myid" + num)
-                .setPubSlingId("pub1sling")
-                .setPubAgentName(PUB1_AGENT)
-                .setPkgType("journal")
-                .setReqType(PackageMessage.ReqType.ADD)
-                .addAllPaths(Arrays.asList("/test"))
-                .setPkgBinary(ByteString.copyFrom(new byte[100]))
+        return PackageMessage.builder()
+                .pkgId("myid" + num)
+                .pubSlingId("pub1sling")
+                .pubAgentName(PUB1_AGENT)
+                .pkgType("journal")
+                .reqType(PackageMessage.ReqType.ADD)
+                .paths(Arrays.asList("/test"))
+                .pkgBinary(new byte[100])
                 .build();
     }
     

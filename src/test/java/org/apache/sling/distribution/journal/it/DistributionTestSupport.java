@@ -125,7 +125,6 @@ public class DistributionTestSupport extends TestSupport {
                 mavenBundle().groupId("org.apache.sling").artifactId("org.apache.sling.commons.metrics").version(SlingOptions.versionResolver),
                 mvn("org.apache.felix", "org.apache.felix.rootcause"),
                 mvn("org.apache.felix", "org.apache.felix.systemready"),
-                mvn("com.google.protobuf", "protobuf-java"),
                 kafka(),
 
                 // The bundle built (org.apache.sling.distribution.journal)

@@ -46,8 +46,7 @@ import org.apache.sling.distribution.common.DistributionException;
 import org.apache.sling.distribution.journal.MessagingProvider;
 import org.apache.sling.distribution.journal.it.DistributionTestSupport;
 import org.apache.sling.distribution.journal.it.kafka.PaxExamWithKafka;
-import org.apache.sling.distribution.journal.messages.Messages;
-import org.apache.sling.distribution.journal.messages.Messages.PackageMessage;
+import org.apache.sling.distribution.journal.messages.PackageMessage;
 import org.apache.sling.distribution.packaging.DistributionPackage;
 import org.apache.sling.distribution.packaging.DistributionPackageBuilder;
 import org.apache.sling.distribution.packaging.DistributionPackageInfo;
@@ -61,8 +60,6 @@ import org.ops4j.pax.exam.spi.reactors.PerClass;
 import org.ops4j.pax.exam.util.Filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.protobuf.ByteString;
 
 /**
  * Starts a publish instance and checks that it can receive and process a PackageMessage from the journal
@@ -115,8 +112,8 @@ public class PublisherReceiveTest extends DistributionTestSupport {
     	Arrays.asList(bundleContext.getBundles()).stream()
     	.forEach(bundle -> log.info(bundle.getSymbolicName() + ":" + bundle.getVersion()));
         DistributionPackage pkg = createDistPackage(RESOURCE_PATH);
-        Messages.PackageMessage pkgMsg = toPackageMessage(pkg, "agent1");
-        provider.createSender().send(TOPIC_PACKAGE, pkgMsg);
+        PackageMessage pkgMsg = toPackageMessage(pkg, "agent1");
+        provider.createSender(TOPIC_PACKAGE).send(pkgMsg);
         await().until(() -> getResource(RESOURCE_PATH), notNullValue());
     }
 
@@ -159,16 +156,16 @@ public class PublisherReceiveTest extends DistributionTestSupport {
         final List<String> deepPaths = Arrays.asList(pkgInfo.get(PROPERTY_REQUEST_DEEP_PATHS, String[].class));
         final String pkgId = pkg.getId();
 
-        return PackageMessage.newBuilder()
-                .setPubSlingId("slingid")
-                .setPkgId(pkgId)
-                .setPubAgentName(agentId)
-                .setPkgBinary(ByteString.copyFrom(pkgBinary))
-                .setPkgType(pkg.getType())
-                .addAllPaths(paths)
-                .setReqType(PackageMessage.ReqType.ADD)
-                .addAllDeepPaths(deepPaths)
-                .setPkgLength(pkgBinary.length)
+        return PackageMessage.builder()
+                .pubSlingId("slingid")
+                .pkgId(pkgId)
+                .pubAgentName(agentId)
+                .pkgBinary(pkgBinary)
+                .pkgType(pkg.getType())
+                .paths(paths)
+                .reqType(PackageMessage.ReqType.ADD)
+                .deepPaths(deepPaths)
+                .pkgLength(pkgBinary.length)
                 .build();
     }
 

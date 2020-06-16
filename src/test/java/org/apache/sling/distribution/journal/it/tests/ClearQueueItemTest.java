@@ -38,8 +38,7 @@ import org.apache.sling.distribution.journal.it.ext.AfterOsgi;
 import org.apache.sling.distribution.journal.it.ext.BeforeOsgi;
 import org.apache.sling.distribution.journal.it.ext.ExtPaxExam;
 import org.apache.sling.distribution.journal.it.kafka.KafkaLocal;
-
-import com.google.protobuf.ByteString;
+import org.apache.sling.distribution.journal.messages.PackageMessage;
 import org.apache.sling.distribution.agent.spi.DistributionAgent;
 import org.apache.sling.distribution.queue.DistributionQueueEntry;
 import org.junit.Assert;
@@ -56,7 +55,6 @@ import org.ops4j.pax.exam.spi.reactors.PerClass;
 import org.ops4j.pax.exam.util.Filter;
 import org.ops4j.pax.exam.util.PathUtils;
 
-import static org.apache.sling.distribution.journal.messages.Messages.*;
 import static org.apache.commons.io.IOUtils.closeQuietly;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -247,9 +245,9 @@ public class ClearQueueItemTest extends DistributionTestSupport {
 
     private void sendInvalidPackages(int nb)
             throws Exception {
-        MessageSender<PackageMessage> sender = clientProvider.createSender();
+        MessageSender<PackageMessage> sender = clientProvider.createSender(TOPIC_PACKAGE);
         for (int i = 0 ; i < nb ; i++) {
-            sender.send(TOPIC_PACKAGE, newInvalidPackage(PUB1_AGENT));
+            sender.send(newInvalidPackage(PUB1_AGENT));
         }
     }
 
@@ -261,16 +259,16 @@ public class ClearQueueItemTest extends DistributionTestSupport {
         final List<String> deepPaths = Collections.emptyList();
         final String pkgId = String.format("package-%s", UUID.randomUUID().toString());
 
-        return PackageMessage.newBuilder()
-                .setPubSlingId("slingid")
-                .setPkgId(pkgId)
-                .setPubAgentName(agentId)
-                .setPkgBinary(ByteString.copyFrom(pkgBinary))
-                .setPkgType("journal")
-                .addAllPaths(paths)
-                .setReqType(PackageMessage.ReqType.ADD)
-                .addAllDeepPaths(deepPaths)
-                .setPkgLength(pkgBinary.length)
+        return PackageMessage.builder()
+                .pubSlingId("slingid")
+                .pkgId(pkgId)
+                .pubAgentName(agentId)
+                .pkgBinary(pkgBinary)
+                .pkgType("journal")
+                .paths(paths)
+                .reqType(PackageMessage.ReqType.ADD)
+                .deepPaths(deepPaths)
+                .pkgLength(pkgBinary.length)
                 .build();
     }
 

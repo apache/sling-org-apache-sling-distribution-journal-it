@@ -63,9 +63,9 @@ import org.apache.sling.distribution.journal.it.ClusterIdCleaner;
 import org.apache.sling.distribution.journal.it.DistributionTestSupport;
 import org.apache.sling.distribution.journal.it.FileUtil;
 import org.apache.sling.distribution.journal.it.kafka.KafkaLocal;
-import org.apache.sling.distribution.journal.messages.Messages.DiscoveryMessage;
-import org.apache.sling.distribution.journal.messages.Messages.PackageMessage;
-import org.apache.sling.distribution.journal.messages.Messages.SubscriberState;
+import org.apache.sling.distribution.journal.messages.DiscoveryMessage;
+import org.apache.sling.distribution.journal.messages.PackageMessage;
+import org.apache.sling.distribution.journal.messages.SubscriberState;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -254,7 +254,7 @@ public class ScaleUpTest {
     }
     
     private void handleDiscovery(MessageInfo info, DiscoveryMessage message) {
-        List<SubscriberState> stateList = message.getSubscriberStateList();
+        List<SubscriberState> stateList = message.getSubscriberStates();
         String slingId = message.getSubSlingId();
         OptionalLong minOffset = stateList.stream().mapToLong(state -> state.getOffset()).min();
         LOG.info("DiscoveryMessage slingid {} received {} states {}", slingId, minOffset, stateList);
@@ -266,7 +266,7 @@ public class ScaleUpTest {
         if (message.getReqType() == PackageMessage.ReqType.TEST) {
             return;
         }
-        LOG.info("PackageMessage received {}, paths {}", info.getOffset(), message.getPathsList());
+        LOG.info("PackageMessage received {}, paths {}", info.getOffset(), message.getPaths());
         this.lastPackageOffset = info.getOffset();
         packageReceived.release();
     }
