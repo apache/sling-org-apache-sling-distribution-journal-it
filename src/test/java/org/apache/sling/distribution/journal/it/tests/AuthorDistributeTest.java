@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,11 +57,11 @@ import org.apache.sling.distribution.journal.MessagingProvider;
 import org.apache.sling.distribution.journal.Reset;
 import org.apache.sling.distribution.journal.it.DistributionTestSupport;
 import org.apache.sling.distribution.journal.it.kafka.PaxExamWithKafka;
-import org.apache.sling.distribution.journal.messages.Messages.DiscoveryMessage;
-import org.apache.sling.distribution.journal.messages.Messages.PackageMessage;
-import org.apache.sling.distribution.journal.messages.Messages.PackageMessage.ReqType;
-import org.apache.sling.distribution.journal.messages.Messages.SubscriberConfiguration;
-import org.apache.sling.distribution.journal.messages.Messages.SubscriberState;
+import org.apache.sling.distribution.journal.messages.DiscoveryMessage;
+import org.apache.sling.distribution.journal.messages.PackageMessage;
+import org.apache.sling.distribution.journal.messages.PackageMessage.ReqType;
+import org.apache.sling.distribution.journal.messages.SubscriberConfig;
+import org.apache.sling.distribution.journal.messages.SubscriberState;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
@@ -149,30 +150,30 @@ public class AuthorDistributeTest extends DistributionTestSupport {
         assertTrue(messageSem.tryAcquire(10, TimeUnit.SECONDS));
         PackageMessage pkg = recordedPackage.get();
         assertEquals(PackageMessage.ReqType.ADD, pkg.getReqType());
-        String path = pkg.getPathsList().iterator().next();
+        String path = pkg.getPaths().iterator().next();
         assertEquals("/", path);
     }
 
     private void simulateDiscoveryMessage(long offset) {
-        MessageSender<DiscoveryMessage> discSender = clientProvider.createSender();
+        MessageSender<DiscoveryMessage> discSender = clientProvider.createSender(TOPIC_DISCOVERY);
         DiscoveryMessage disc = createDiscoveryMessage(offset);
-        discSender.send(TOPIC_DISCOVERY, disc);
+        discSender.accept(disc);
     }
 
     private DiscoveryMessage createDiscoveryMessage(long offset) {
-        SubscriberState subState = SubscriberState.newBuilder()
-                .setOffset(offset)
-                .setPubAgentName(PUB1_AGENT)
+        SubscriberState subState = SubscriberState.builder()
+                .offset(offset)
+                .pubAgentName(PUB1_AGENT)
                 .build();
-        return DiscoveryMessage.newBuilder()
-                .setSubSlingId(SUB1_SLING_ID)
-                .setSubAgentName(SUB1_AGENT)
-                .setSubscriberConfiguration(SubscriberConfiguration
-                        .newBuilder()
-                        .setEditable(false)
-                        .setMaxRetries(-1)
+        return DiscoveryMessage.builder()
+                .subSlingId(SUB1_SLING_ID)
+                .subAgentName(SUB1_AGENT)
+                .subscriberConfiguration(SubscriberConfig
+                        .builder()
+                        .editable(false)
+                        .maxRetries(-1)
                         .build())
-                .addSubscriberState(subState)
+                .subscriberStates(Arrays.asList(subState))
                 .build();
     }
 
