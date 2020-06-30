@@ -28,7 +28,9 @@
     <appender-ref ref="console"/>
   </root>
 
+  
   <logger name="kafka" level="WARN"/>
+  <logger name="org.apache.sling.distribution.journal.kafka.KafkaJsonMessageSender" level="WARN"/>
   <logger name="org.apache.zookeeper" level="WARN"/>
   <logger name="org.apache.kafka.clients" level="WARN"/>
   <logger name="org.apache.sling.jcr.repoinit.impl" level="WARN"/>

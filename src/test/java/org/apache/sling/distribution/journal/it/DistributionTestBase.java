@@ -19,24 +19,18 @@
 package org.apache.sling.distribution.journal.it;
 
 import static org.awaitility.Awaitility.await;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.ops4j.pax.exam.cm.ConfigurationAdminOptions.newConfiguration;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -53,12 +47,8 @@ import org.apache.sling.distribution.DistributionRequestType;
 import org.apache.sling.distribution.DistributionResponse;
 import org.apache.sling.distribution.Distributor;
 import org.apache.sling.distribution.SimpleDistributionRequest;
-import org.apache.sling.distribution.agent.spi.DistributionAgent;
 import org.apache.sling.distribution.journal.MessagingProvider;
 import org.apache.sling.distribution.journal.it.kafka.KafkaLocal;
-import org.awaitility.Duration;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.ops4j.pax.exam.Configuration;
@@ -78,11 +68,7 @@ public class DistributionTestBase extends DistributionTestSupport {
     private static KafkaLocal kafka;
 
     private static final String RESOURCE_TYPE = "sling:Folder";
-    private static final String PUB1_AGENT = "agent1";
-
-    @Inject
-    @Filter(value = "(name=agent1)", timeout = 40000L)
-    DistributionAgent agent;
+    public static final String PUB1_AGENT = "agent1";
 
     @Inject
     @Filter
@@ -127,14 +113,14 @@ public class DistributionTestBase extends DistributionTestSupport {
     }
 
 
-    public static TestContainer startPublishInstance(int httpPort, String agentName, boolean editable, String stageAgentName) {
+    public static TestContainer startPublishInstance(int httpPort, String agentName, boolean editable, boolean stagingPrecondition) {
         ExamSystem testSystem;
         try {
             String workdir = String.format("%s/target/paxexam/%s", PathUtils.getBaseDir(), "publish-" + httpPort + "-" + UUID.randomUUID().toString());
             Option[] config = CoreOptions.options( //
                     new DistributionTestSupport().withHttpPort(httpPort).baseConfiguration(workdir), //
                     defaultOsgiConfigs(), //
-                    publishOsgiConfigs(agentName, editable, stageAgentName), //
+                    publishOsgiConfigs(agentName, editable, stagingPrecondition), //
                     CoreOptions.workingDirectory(workdir)
             );
 
@@ -144,6 +130,7 @@ public class DistributionTestBase extends DistributionTestSupport {
         }
         TestContainer container = PaxExamRuntime.createContainer(testSystem);
         container.start();
+        LOG.info("Container with port {} started.", httpPort);
         return container;
     }
 
@@ -160,16 +147,6 @@ public class DistributionTestBase extends DistributionTestSupport {
         LOG.info("Distribution for path {} ended with message: {} and status: {}", new Object[] { path,
                 response.getMessage(), response.isSuccessful() });
         return response.isSuccessful();
-    }
-
-    private List<String> queueNames() {
-        List<String> queueNames = new ArrayList<>();
-        agent.getQueueNames().forEach(queueNames::add);
-        return queueNames;
-    }
-
-    protected int getQueueItems(String queueName) {
-        return agent.getQueue(queueName).getStatus().getItemsCount();
     }
 
     @SuppressWarnings({ "deprecation" })
@@ -214,68 +191,5 @@ public class DistributionTestBase extends DistributionTestSupport {
         await().atMost(30, TimeUnit.SECONDS)
             .until(() -> tryGetPath(httpPort, path), equalTo(200));
     }
-
-    public Iterable<String> waitSubQueues(String... queues) {
-        Matcher<String>[] matchers = containsNames(queues);
-        Iterable<String> queueNames = await().atMost(Duration.ONE_MINUTE)
-            .pollInterval(Duration.FIVE_SECONDS)
-            .until(this::queueNames, containsInAnyOrder(matchers));
-        LOG.info("Subscriber Queues: " + String.join(", ", queueNames));
-        return queueNames;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Matcher<String>[] containsNames(String... queues) {
-        return Stream.of(queues)
-                .map(name -> Matchers.containsString(name))
-                .toArray(Matcher[]::new);
-    }
-
-    protected void waitEmptySubQueues() {
-        List<String> names = queueNames();
-        for (String name : names) {
-            await("Queue " + name + "empty")
-                .atMost(60, TimeUnit.SECONDS)
-                .until(() -> getQueueItems(name), equalTo(0));
-        }
-    }
-
-
-    static protected void waitQueueItems(int httpPort, String agentName, int count) {
-        await("Waiting for number of items in queue.")
-                .atMost(Duration.ONE_MINUTE)
-                .pollInterval(Duration.FIVE_SECONDS)
-                .until(() -> tryGetQueueItems(httpPort, agentName), equalTo(count));
-        LOG.info("Items count {} for agent {}", count, agentName + "-" + httpPort);
-
-    }
-
-    static private int tryGetQueueItems(int httpPort, String agentName) {
-        String url = String.format("http://localhost:%s/libs/sling/distribution/services/agents/%s/queues.2.json", httpPort, agentName);
-        HttpGet httpGet = new HttpGet(url);
-        Header authHeader = null;
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
-            authHeader = new BasicScheme().authenticate(new UsernamePasswordCredentials("admin", "admin"), httpGet, null);
-            httpGet.addHeader(authHeader);
-
-
-            CloseableHttpResponse response = client.execute(httpGet);
-            String text = IOUtils.toString(response.getEntity().getContent(), Charset.defaultCharset());
-            if (text == null) {
-                return -1;
-            }
-
-            String itemsCount = StringUtils.substringBetween(text, "itemsCount\":", ",");
-            if (itemsCount == null) {
-                return -1;
-            }
-
-            return Integer.parseInt(itemsCount.trim());
-        } catch (Throwable e) {
-            LOG.error("cannot get items count {}", url, e);
-        }
-        return  -1;
-    }
-
 
 }

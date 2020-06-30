@@ -41,7 +41,6 @@ import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.distribution.DistributionRequest;
 import org.apache.sling.distribution.DistributionRequestType;
 import org.apache.sling.distribution.SimpleDistributionRequest;
-import org.apache.sling.distribution.agent.spi.DistributionAgent;
 import org.apache.sling.distribution.common.DistributionException;
 import org.apache.sling.distribution.journal.MessagingProvider;
 import org.apache.sling.distribution.journal.it.DistributionTestSupport;
@@ -81,15 +80,7 @@ public class PublisherReceiveTest extends DistributionTestSupport {
     private DistributionPackageBuilder packageBuilder;
     
     @Inject
-    @Filter("(name=subscriber-agent1)")
-    DistributionAgent subscriber;
-    
-    @Inject
     MessagingProvider provider;
-    /*
-    @Inject
-    ServiceUserMapper serviceUserMapper;
-    */
     
     @Configuration
     public Option[] configuration() {
@@ -109,8 +100,8 @@ public class PublisherReceiveTest extends DistributionTestSupport {
     
     @Test
     public void testReceive() throws Exception {
-    	Arrays.asList(bundleContext.getBundles()).stream()
-    	.forEach(bundle -> log.info(bundle.getSymbolicName() + ":" + bundle.getVersion()));
+        Arrays.asList(bundleContext.getBundles()).stream()
+            .forEach(bundle -> log.info(bundle.getSymbolicName() + ":" + bundle.getVersion()));
         DistributionPackage pkg = createDistPackage(RESOURCE_PATH);
         PackageMessage pkgMsg = toPackageMessage(pkg, "agent1");
         provider.createSender(TOPIC_PACKAGE).send(pkgMsg);

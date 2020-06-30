@@ -18,6 +18,9 @@
  */
 package org.apache.sling.distribution.journal.it.tests;
 
+import java.io.IOException;
+
+import org.apache.sling.distribution.journal.it.Client;
 import org.apache.sling.distribution.journal.it.DistributionTestBase;
 import org.apache.sling.distribution.journal.it.ext.AfterOsgi;
 import org.apache.sling.distribution.journal.it.ext.BeforeOsgi;
@@ -29,20 +32,16 @@ import org.ops4j.pax.exam.TestContainer;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerClass;
 
-import java.io.IOException;
-
 
 @RunWith(ExtPaxExam.class)
 @ExamReactorStrategy(PerClass.class)
 public class StagedDistributionFailureTest extends DistributionTestBase {
 
-    private static final String SUB1_AGENT = "subscriber";
-    private static final String SUB2_AGENT = "subscriber";
-
+    private static final String SUB1_AGENT = PUB1_AGENT + "Subscriber";
+    private static final String SUB2_AGENT = PUB1_AGENT + "Subscriber";
 
     private static volatile TestContainer publish;
     private static volatile TestContainer golden_publish;
-
 
     private static final String TEST_PATH = "/content/mytest";
 
@@ -50,17 +49,21 @@ public class StagedDistributionFailureTest extends DistributionTestBase {
     @BeforeOsgi
     public static void beforeOsgi() throws Exception {
         beforeOsgiBase();
-        publish = startPublishInstance(8182,  SUB1_AGENT, false,  SUB2_AGENT);
+        publish = startPublishInstance(8182,  SUB1_AGENT, false,  true);
         new Thread(StagedDistributionFailureTest::delayedStartGoldenSubscriber).start();
     }
-
+    
     /**
      * Wait for  at least one item in publish queue before starting golden publish
      */
     private static void delayedStartGoldenSubscriber() {
-        waitQueueItems(8182, SUB1_AGENT, 1);
-        LOG.info("Starting golden publish");
-        golden_publish = startPublishInstance(8183, SUB2_AGENT, true, null);
+        try {
+            Client.waitSumQueueSizes(1);
+            LOG.info("Starting golden publish");
+            golden_publish = startPublishInstance(8183, SUB2_AGENT, true, false);
+        } catch (Exception e) {
+            LOG.error("Start of golden subscriber failed with: " + e.getMessage(), e);
+        }
     }
 
     @AfterOsgi
@@ -78,8 +81,7 @@ public class StagedDistributionFailureTest extends DistributionTestBase {
     @Before
     public void before() {
         createPath(TEST_PATH);
-
-        waitSubQueues(SUB1_AGENT);
+        Client.waitNumQueues(1);
     }
 
     /**
@@ -90,13 +92,14 @@ public class StagedDistributionFailureTest extends DistributionTestBase {
      */
     @Test
     public void testDistribute() {
-
         distribute(TEST_PATH);
 
-        waitSubQueues(SUB1_AGENT, SUB2_AGENT);
-        waitEmptySubQueues();
+        Client.waitNumQueues(2);
+        Client.waitSumQueueSizes(0);
 
         waitPath(8182, TEST_PATH);
         waitPath(8183, TEST_PATH);
     }
+
+
 }

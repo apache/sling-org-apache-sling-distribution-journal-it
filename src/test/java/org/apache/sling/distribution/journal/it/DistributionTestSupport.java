@@ -118,6 +118,7 @@ public class DistributionTestSupport extends TestSupport {
                 paxTinybundles(),
                 SlingOptions.logback(),
                 mavenBundle().groupId("org.slf4j").artifactId("log4j-over-slf4j").version(SlingOptions.versionResolver),
+                mvn("com.google.code.gson", "gson"),
                 
                 // The base sling Quickstart
                 slingQuickstart(baseDirectory),
@@ -298,13 +299,10 @@ public class DistributionTestSupport extends TestSupport {
      * OSGI configuration targeted to the publish instances only
      */
     public static Option publishOsgiConfigs(String agentName) {
-        return publishOsgiConfigs(agentName, true, null);
-
+        return publishOsgiConfigs(agentName, true, false);
     }
 
-    protected static Option publishOsgiConfigs(String agentName, boolean editable, String stage) {
-
-
+    protected static Option publishOsgiConfigs(String agentName, boolean editable, boolean stagingPrecondition) {
         return composite(
                 factoryConfiguration("org.apache.sling.distribution.resources.impl.DistributionServiceResourceProviderFactory")
                         .put("kind", "agent")
@@ -313,9 +311,9 @@ public class DistributionTestSupport extends TestSupport {
 
                 factoryConfiguration("org.apache.sling.distribution.journal.impl.subscriber.DistributionSubscriberFactory")
                         .put("name", agentName)
-                        .put("agentNames", new String[]{"agent1"})
+                        .put("agentNames", new String[]{ "agent1"})
                         .put("packageBuilder.target", "(name=journal)")
-                        .put("precondition.target",  stage != null ? "(name=staging)" : "(name=default)")
+                        .put("precondition.target",  stagingPrecondition ? "(name=staging)" : "(name=default)")
                         .put("editable", editable)
                         .put("announceDelay", "500")
                         .asOption());

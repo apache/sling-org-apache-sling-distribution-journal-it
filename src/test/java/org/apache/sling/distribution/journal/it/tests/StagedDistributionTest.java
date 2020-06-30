@@ -18,28 +18,28 @@
  */
 package org.apache.sling.distribution.journal.it.tests;
 
+import java.io.IOException;
+
+import org.apache.sling.distribution.journal.it.Client;
 import org.apache.sling.distribution.journal.it.DistributionTestBase;
 import org.apache.sling.distribution.journal.it.ext.AfterOsgi;
 import org.apache.sling.distribution.journal.it.ext.BeforeOsgi;
 import org.apache.sling.distribution.journal.it.ext.ExtPaxExam;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.TestContainer;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerClass;
 
-import java.io.IOException;
-
-@Ignore(value = "Switched off as this test does not seem to work on jenkins. Locally it works.")
+//@Ignore(value = "Switched off as this test does not seem to work on jenkins. Locally it works.")
 @RunWith(ExtPaxExam.class)
 @ExamReactorStrategy(PerClass.class)
 public class StagedDistributionTest extends DistributionTestBase {
 
-    private static final String SUB1_AGENT = "subscriber-regular";
-    private static final String SUB2_AGENT = "subscriber-golden";
-
+    private static final String SUB1_AGENT = PUB1_AGENT + "Subscriber";
+    private static final String SUB2_AGENT = PUB1_AGENT + "Subscriber";
+    
     private static TestContainer golden_publish;
     private static TestContainer publish;
 
@@ -50,8 +50,8 @@ public class StagedDistributionTest extends DistributionTestBase {
     @BeforeOsgi
     public static void beforeOsgi() throws Exception {
         beforeOsgiBase();
-        publish = startPublishInstance(8182,  SUB1_AGENT, false,  SUB2_AGENT);
-        golden_publish = startPublishInstance(8183, SUB2_AGENT, true, null);
+        publish = startPublishInstance(8182,  SUB1_AGENT, false,  true);
+        golden_publish = startPublishInstance(8183, SUB2_AGENT, true, false);
 
     }
 
@@ -69,8 +69,7 @@ public class StagedDistributionTest extends DistributionTestBase {
     @Before
     public void before() {
         createPath(TEST_PATH);
-
-        waitSubQueues(SUB1_AGENT, SUB2_AGENT);
+        Client.waitNumQueues(2);
     }
 
     @Test
@@ -78,7 +77,7 @@ public class StagedDistributionTest extends DistributionTestBase {
 
         distribute(TEST_PATH);
 
-        waitEmptySubQueues();
+        Client.waitSumQueueSizes(0);
 
         waitPath(8182, TEST_PATH);
         waitPath(8183, TEST_PATH);
