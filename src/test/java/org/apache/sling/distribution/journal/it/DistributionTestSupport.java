@@ -311,7 +311,7 @@ public class DistributionTestSupport extends TestSupport {
 
                 factoryConfiguration("org.apache.sling.distribution.journal.impl.subscriber.DistributionSubscriberFactory")
                         .put("name", agentName)
-                        .put("agentNames", new String[]{ "agent1"})
+                        .put("agentNames", new String[]{"agent1"})
                         .put("packageBuilder.target", "(name=journal)")
                         .put("precondition.target",  stagingPrecondition ? "(name=staging)" : "(name=default)")
                         .put("editable", editable)

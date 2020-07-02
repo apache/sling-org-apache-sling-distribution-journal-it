@@ -100,8 +100,6 @@ public class PublisherReceiveTest extends DistributionTestSupport {
     
     @Test
     public void testReceive() throws Exception {
-        Arrays.asList(bundleContext.getBundles()).stream()
-            .forEach(bundle -> log.info(bundle.getSymbolicName() + ":" + bundle.getVersion()));
         DistributionPackage pkg = createDistPackage(RESOURCE_PATH);
         PackageMessage pkgMsg = toPackageMessage(pkg, "agent1");
         provider.createSender(TOPIC_PACKAGE).send(pkgMsg);
