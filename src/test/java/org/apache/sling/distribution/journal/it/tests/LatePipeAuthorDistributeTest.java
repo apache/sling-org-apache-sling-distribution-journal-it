@@ -63,6 +63,8 @@ import eu.rekawek.toxiproxy.ToxiproxyClient;
 /**
  * Test for the journal coming up after the start of an author instance
  * and the journal being stopped and restarted when author instance already runs.
+ * 
+ * This test only runs if there is a running Toxi Proxy instance locally
  */
 @RunWith(PaxExamWithKafka.class)
 @ExamReactorStrategy(PerClass.class)
