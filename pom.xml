@@ -48,7 +48,7 @@
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-distribution-journal-it.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-distribution-journal-it.git</developerConnection>
-        <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-distribution-journal-it.git</url>
+        <url>https://github.com/apache/sling-org-apache-sling-distribution-journal-it.git</url>
       <tag>HEAD</tag>
   </scm>
 
